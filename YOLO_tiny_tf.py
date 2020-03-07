@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import numpy as np
 import cv2
 import tensorflow as tf
@@ -47,7 +48,7 @@ class YOLO_TF:
 			if argvs[i] == '-fromfolder' : 
 				self.fromfolder = argvs[i+1]
 			else:
-				self.fromfolder = No
+				self.fromfolder = None
 			if argvs[i] == '-tofile_img' : self.tofile_img = argvs[i+1] ; self.filewrite_img = True
 			if argvs[i] == '-tofile_txt' : self.tofile_txt = argvs[i+1] ; self.filewrite_txt = True
 			if argvs[i] == '-imshow' :
@@ -123,12 +124,28 @@ class YOLO_TF:
 		s = time.time()
 		self.h_img,self.w_img,_ = img.shape
 		img_resized = cv2.resize(img, (448, 448))
+		# cv2.imshow("img_resized", img_resized)
+
+		# opencv default image type is BGR, so, change it to RGB 
 		img_RGB = cv2.cvtColor(img_resized,cv2.COLOR_BGR2RGB)
+		# cv2.imshow("img_RGB", img_RGB)
+		
+		# change the image to array
 		img_resized_np = np.asarray( img_RGB )
+
+		# make an empty array
 		inputs = np.zeros((1,448,448,3),dtype='float32')
+
+		# TODO put the image array into inputs, image/255*2-1????? remap data from [0, 255] to [-1, 1] why
 		inputs[0] = (img_resized_np/255.0)*2.0-1.0
 		in_dict = {self.x: inputs}
+
+		# 输出最后的全连接层，（1， 1470）
 		net_output = self.sess.run(self.fc_19,feed_dict=in_dict)
+		# print('=========================================')
+		# print(in_dict)
+		# print(net_output.shape)
+		# print(net_output)
 		self.result = self.interpret_output(net_output[0])
 		self.show_results(img,self.result)
 		strtime = str(time.time()-s)
@@ -203,7 +220,7 @@ class YOLO_TF:
 		result = []
 		for i in range(len(boxes_filtered)):
 			result.append([self.classes[classes_num_filtered[i]],boxes_filtered[i][0],boxes_filtered[i][1],boxes_filtered[i][2],boxes_filtered[i][3],probs_filtered[i]])
-
+		print "result = "+str(result)
 		return result
 
 	def show_results(self,img,results):
@@ -257,7 +274,7 @@ class YOLO_TF:
 
 def main(argvs):
 	yolo = YOLO_TF(argvs)
-	cv2.waitKey(1000)
+	cv2.waitKey()
 
 
 if __name__=='__main__':	
